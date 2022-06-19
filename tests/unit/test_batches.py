@@ -1,8 +1,6 @@
-from datetime import date, timedelta
+from datetime import date
 
-import pytest
-
-from model import Batch, OrderLine
+from domain.model import Batch, OrderLine
 
 
 def make_batch_and_line(sku, batch_qty, line_qty):
