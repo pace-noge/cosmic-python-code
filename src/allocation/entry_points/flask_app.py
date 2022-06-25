@@ -26,7 +26,8 @@ def allocate_endpoint():
     try:
         batch_ref = services.allocate(
             request.json["order_id"], request.json["sku"],
-            request.json["qty"], unit_of_work.SqlAlchemyUnitOfWork()
+            request.json["qty"],
+            unit_of_work.SqlAlchemyUnitOfWork()
         )
     except (model.OutOfStock, services.InvalidSku) as e:
         return {"message": str(e)}, 400
