@@ -4,10 +4,11 @@ from flask import Flask, request
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-import config
-from domain import model
-from adapters import orm, repository
-from service_layer import services
+from src.allocation import config
+from src.allocation.domain import model
+from src.allocation.adapters import repository
+from src.allocation.adapters import orm
+from src.allocation.service_layer import services, unit_of_work
 
 orm.start_mappers()
 get_session = sessionmaker(bind=create_engine(config.get_postgres_uri()))
@@ -25,7 +26,7 @@ def allocate_endpoint():
     try:
         batch_ref = services.allocate(
             request.json["order_id"], request.json["sku"],
-            request.json["qty"], repo, session
+            request.json["qty"], unit_of_work.SqlAlchemyUnitOfWork()
         )
     except (model.OutOfStock, services.InvalidSku) as e:
         return {"message": str(e)}, 400
@@ -44,7 +45,6 @@ def add_batch():
         request.json["sku"],
         request.json["qty"],
         eta,
-        repo,
-        session
+        unit_of_work.SqlAlchemyUnitOfWork()
     )
     return "OK", 201

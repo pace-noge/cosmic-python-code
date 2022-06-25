@@ -2,10 +2,10 @@ from datetime import date, timedelta
 
 import pytest
 
-from domain import model
-from adapters import repository
-from domain.model import Batch, OrderLine
-from service_layer import services
+from allocation.service_layer import unit_of_work
+from src.allocation.domain import model
+from src.allocation.adapters import repository
+from src.allocation.service_layer import services
 
 today = date.today()
 tomorrow = today + timedelta(days=1)
@@ -41,6 +41,24 @@ class FakeSession:
     def commit(self):
         self.committed = True
 
+
+class FakeUnitOfWork(unit_of_work.AbstractUnitOfWork):
+    def __init__(self):
+        self.batches = FakeRepository([])
+        self.committed = False
+
+    def commit(self):
+        self.committed = True
+
+    def rollback(self):
+        pass
+
+
+def test_add_batch():
+    uow = FakeUnitOfWork()
+    services.add_batch("b1", "CRUNCHY-ARMCHAIR", 100, None, uow)
+    assert uow.batches.get("b1") is not None
+    assert uow.committed
 
 def test_allocate_returns_allocation():
     repo, session = FakeRepository([]), FakeSession()
