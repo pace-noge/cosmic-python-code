@@ -15,21 +15,18 @@ class OrderLine:
     qty: int
 
 
-def allocate(line: OrderLine, batches: List[Batch]) -> str:
-    try:
-        batch = next(b for b in sorted(batches) if b.can_allocate(line))
-        batch.allocate(line)
-        return batch.reference
-    except StopIteration:
-        raise OutOfStock(f"Out of stock for sku {line.sku}")
+class Product:
+    def __init__(self, sku: str, batches: List[Batch]):
+        self.sku = sku
+        self.batches = batches
 
-
-def deallocate(line: OrderLine, batch: Batch) -> str:
-    try:
-        batch.deallocate(line)
-        return True
-    except Exception as e:
-        return False
+    def allocate(self, line: OrderLine):
+        try:
+            batch = next(b for b in sorted(self.batches) if b.can_allocate(line))
+            batch.allocate(line)
+            return batch.reference
+        except StopIteration:
+            raise OutOfStock(f"Out os stock for sku {line.sku}")
 
 
 class Batch:

@@ -25,4 +25,3 @@ class SqlAlchemyRepository(AbstractRepository):
 
     def list(self):
         return self.session.query(model.Batch).all()
-
