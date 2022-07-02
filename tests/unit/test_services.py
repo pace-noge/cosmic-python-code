@@ -60,16 +60,16 @@ def test_add_batch():
     assert uow.batches.get("b1") is not None
     assert uow.committed
 
+
 def test_allocate_returns_allocation():
-    repo, session = FakeRepository([]), FakeSession()
-    services.add_batch("batch1", "COMPLICATED-LAMP", 100, None, repo, session)
-    result = services.allocate("o1", "COMPLICATED-LAMP", 10, repo, session)
+    uow = FakeUnitOfWork()
+    services.add_batch("batch1", "COMPLICATED-LAMP", 100, None, uow)
+    result = services.allocate("o1", "COMPLICATED-LAMP", 10, uow)
     assert result == "batch1"
 
 
 def test_allocate_errors_for_invalid_sku():
-    repo, session = FakeRepository([]), FakeSession()
-    services.add_batch("batch1", "AREAL-SKU", 100, None, repo, session)
+    uow = FakeUnitOfWork()
+    services.add_batch("batch1", "AREAL-SKU", 100, None, uow)
     with pytest.raises(services.InvalidSku, match="Invalid sku NOT-EXISTS"):
-        services.allocate("o1", "NOT-EXISTS", 10, repo, FakeSession())
-
+        services.allocate("o1", "NOT-EXISTS", 10, uow)
