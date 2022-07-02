@@ -51,7 +51,7 @@ def test_can_deallocate_allocated_lines():
     invalid_line = OrderLine("order-003", "INVALID-SKU", 2)
     assert batch.can_allocate(invalid_line) is False
     batch.deallocate(invalid_line)
-    assert  batch.available_quantity == 18
+    assert batch.available_quantity == 18
 
     batch.deallocate(unalllocated_line)
     assert batch.available_quantity == 20

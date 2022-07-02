@@ -4,11 +4,11 @@ from flask import Flask, request
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from src.allocation import config
-from src.allocation.domain import model
-from src.allocation.adapters import repository
-from src.allocation.adapters import orm
-from src.allocation.service_layer import services, unit_of_work
+from allocation import config
+from allocation.domain import model
+from allocation.adapters import repository
+from allocation.adapters import orm
+from allocation.service_layer import services, unit_of_work
 
 orm.start_mappers()
 get_session = sessionmaker(bind=create_engine(config.get_postgres_uri()))
@@ -49,3 +49,7 @@ def add_batch():
         unit_of_work.SqlAlchemyUnitOfWork()
     )
     return "OK", 201
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0.0", port=8005, debug=True)

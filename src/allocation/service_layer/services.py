@@ -2,9 +2,9 @@ from datetime import date
 from typing import Optional
 
 from allocation.service_layer import unit_of_work
-from src.allocation.domain import model
-from src.allocation.adapters.repository import AbstractRepository
-from src.allocation.domain.model import OrderLine
+from allocation.domain import model
+from allocation.adapters.repository import AbstractRepository
+from allocation.domain.model import OrderLine
 
 
 class InvalidSku(Exception):
@@ -25,7 +25,6 @@ def allocate(
         if not is_valid_sku(line.sku, batches):
             raise InvalidSku(f"Invalid sku {line.sku}")
         batch_ref = model.allocate(line, batches)
-        uow.commit()
     return batch_ref
 
 
@@ -39,7 +38,6 @@ def reallocate(
             raise InvalidSku(f"Invalid sku {line.sku}")
         batch.deallocate(line)
         allocate(line)
-        uow.commit()
 
 
 def add_batch(
@@ -48,7 +46,6 @@ def add_batch(
 ) -> None:
     with uow:
         uow.batches.add(model.Batch(ref, sku, qty, eta))
-        uow.commit()
 
 
 def deallocate(line: model.OrderLine, repo: AbstractRepository, batch_ref: str, session) -> str:
@@ -60,4 +57,3 @@ def deallocate(line: model.OrderLine, repo: AbstractRepository, batch_ref: str, 
         return True
     except Exception as e:
         return False
-

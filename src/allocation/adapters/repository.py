@@ -1,6 +1,6 @@
 import abc
 
-from src.allocation.domain import model
+from allocation.domain import model
 
 
 class AbstractRepository(abc.ABC):
