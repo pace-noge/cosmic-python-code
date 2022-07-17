@@ -1,4 +1,13 @@
-from sqlalchemy import MetaData, Table, Column, Integer, String, Date, ForeignKey
+from sqlalchemy import (
+    MetaData,
+    Table,
+    Column,
+    Integer,
+    String,
+    Date,
+    ForeignKey,
+    event
+)
 from sqlalchemy.orm import mapper, relationship
 
 from allocation.domain import model
@@ -12,6 +21,14 @@ order_lines = Table(
     Column("sku", String(255)),
     Column("qty", Integer, nullable=False),
     Column("order_id", String(255))
+)
+
+
+products = Table(
+    "products",
+    metadata,
+    Column("sku", String(255), primary_key=True),
+    Column("version_number", Integer, nullable=False, server_default="0"),
 )
 
 
@@ -34,14 +51,27 @@ allocations = Table(
     Column("batch_id", ForeignKey("batches.id"))
 )
 
+
 def start_mappers():
     lines_mapper = mapper(model.OrderLine, order_lines)
-    mapper(
+    batches_mapper = mapper(
         model.Batch,
         batches,
         properties={
             "_allocations": relationship(
-                lines_mapper, secondary=allocations, collection_class=set,
+                lines_mapper,
+                secondary=allocations,
+                collection_class=set,
             )
         }
     )
+    mapper(
+        model.Product,
+        products,
+        properties={"batches": relationship(batches_mapper)}
+    )
+
+
+@event.listens_for(model.Product, "load")
+def receive_load(product, _):
+    product.events = []

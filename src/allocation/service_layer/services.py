@@ -5,6 +5,7 @@ from allocation.service_layer import unit_of_work
 from allocation.domain import model
 from allocation.adapters.repository import AbstractRepository
 from allocation.domain.model import OrderLine
+from . import message_bus
 
 
 class InvalidSku(Exception):
@@ -21,11 +22,12 @@ def allocate(
 ) -> str:
     line = OrderLine(order_id, sku, qty)
     with uow:
-        batches = uow.batches.list()
-        if not is_valid_sku(line.sku, batches):
+        product = uow.products.get(sku=line.sku)
+        if product is None:
             raise InvalidSku(f"Invalid sku {line.sku}")
-        batch_ref = model.allocate(line, batches)
-    return batch_ref
+        batch_ref = product.allocate(line)
+        uow.commit()
+        return batch_ref
 
 
 def reallocate(

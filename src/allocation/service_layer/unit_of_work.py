@@ -3,31 +3,38 @@ import abc
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import Session
+from . import message_bus
 
 from allocation import config
 from allocation.adapters import repository
 
 
 class AbstractUnitOfWork(abc.ABC):
-    batches: repository.AbstractRepository
+    products: repository.AbstractRepository
 
     def __enter__(self) -> AbstractUnitOfWork:
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if exc_type is None:
-            self.commit()
-        else:
-            self.rollback()
+    def __exit__(self, *args):
+        self.rollback()
+
+    def commit(self):
+        self._commit()
+        self.publish_events()
+
+    def publish_events(self):
+        for product in self.products.seen:
+            while product.events:
+                event = product.events.pop(0)
+                message_bus.handle(event)
 
     @abc.abstractmethod
-    def commit(self):
+    def _commit(self):
         raise NotImplementedError
 
     @abc.abstractmethod
     def rollback(self):
         raise NotImplementedError
-
 
 DEFAULT_SESSION_FACTORY = sessionmaker(
     bind=create_engine(
@@ -42,14 +49,14 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
 
     def __enter__(self):
         self.session = self.session_factory()
-        self.batches = repository.SqlAlchemyRepository(self.session)
+        self.products = repository.SqlAlchemyRepository(self.session)
         return super().__enter__()
 
     def __exit__(self, *args):
         super().__exit__(*args)
         self.session.close()
 
-    def commit(self):
+    def _commit(self):
         self.session.commit()
 
     def rollback(self):
