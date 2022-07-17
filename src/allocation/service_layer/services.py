@@ -23,10 +23,10 @@ def allocate(
     with uow:
         product = uow.products.get(sku=line.sku)
         if product is None:
-            product = model.Product(sku, batches=[])
-            uow.products.add(product)
-        product.batches.append(model.Batch(ref, sku, qty, eta))
+            raise InvalidSku(f"Invalid sku {line.sku}")
+        batch_ref = product.allocate(line)
         uow.commit()
+    return batch_ref
 
 
 def reallocate(
