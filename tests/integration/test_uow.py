@@ -22,7 +22,7 @@ def insert_batch(session, ref, sku, qty, eta, product_version=1):
 
 def get_allocated_batch_ref(session, orderid, sku):
     [[orderlineid]] = session.execute(
-        "SELECT id FROM order_lines WHERE orderid=:orderid AND sku=:sku",
+        "SELECT id FROM order_lines WHERE order_id=:orderid AND sku=:sku",
         dict(orderid=orderid, sku=sku),
     )
     [[batchref]] = session.execute(
@@ -94,7 +94,7 @@ def test_concurrent_updates_to_version_are_not_allowed(postgres_session_factory)
     session.commit()
 
     order1, order2 = random_orderid(1), random_orderid(2)
-    exceptions = []  # type: List[Exception]
+    exceptions = [] 
     try_to_allocate_order1 = lambda: try_to_allocate(order1, sku, exceptions)
     try_to_allocate_order2 = lambda: try_to_allocate(order2, sku, exceptions)
     thread1 = threading.Thread(target=try_to_allocate_order1)

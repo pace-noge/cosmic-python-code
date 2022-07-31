@@ -47,7 +47,12 @@ def add_batch(
         uow: unit_of_work.AbstractUnitOfWork,
 ) -> None:
     with uow:
-        uow.batches.add(model.Batch(ref, sku, qty, eta))
+        product = uow.products.get(sku=sku)
+        if product is None:
+            product = model.Product(sku, batches=[])
+            uow.products.add(product)
+        product.batches.append(model.Batch(ref, sku, qty, eta))
+        uow.commit()
 
 
 def deallocate(line: model.OrderLine, repo: AbstractRepository, batch_ref: str, session) -> str:

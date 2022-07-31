@@ -9,7 +9,7 @@ def handle(event: events.Event):
 
 
 def send_out_of_stock_notification(event: events.Event):
-    email.send_email(
+    email.send_mail(
         "stock@made.com",
         f"Out of stock for {event.sku}",
     )
