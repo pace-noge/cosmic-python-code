@@ -5,7 +5,7 @@ from typing import List
 import pytest
 from allocation.domain import model
 from allocation.service_layer import unit_of_work
-from ..random_refs import random_sku, random_batchref, random_order_id
+from ..random_refs import random_sku, random_batchref, random_orderid
 
 
 def insert_batch(session, ref, sku, qty, eta, product_version=1):
@@ -20,10 +20,10 @@ def insert_batch(session, ref, sku, qty, eta, product_version=1):
     )
 
 
-def get_allocated_batch_ref(session, order_id, sku):
+def get_allocated_batch_ref(session, orderid, sku):
     [[orderlineid]] = session.execute(
-        "SELECT id FROM order_lines WHERE order_id=:order_id AND sku=:sku",
-        dict(order_id=order_id, sku=sku),
+        "SELECT id FROM order_lines WHERE order_id=:orderid AND sku=:sku",
+        dict(orderid=orderid, sku=sku),
     )
     [[batchref]] = session.execute(
         "SELECT b.reference FROM allocations JOIN batches AS b ON batch_id = b.id"
@@ -33,12 +33,12 @@ def get_allocated_batch_ref(session, order_id, sku):
     return batchref
 
 
-def test_uow_can_retrieve_a_batch_and_allocate_to_it(session_factory):
-    session = session_factory()
+def test_uow_can_retrieve_a_batch_and_allocate_to_it(sqlite_session_factory):
+    session = sqlite_session_factory()
     insert_batch(session, "batch1", "HIPSTER-WORKBENCH", 100, None)
     session.commit()
 
-    uow = unit_of_work.SqlAlchemyUnitOfWork(session_factory)
+    uow = unit_of_work.SqlAlchemyUnitOfWork(sqlite_session_factory)
     with uow:
         product = uow.products.get(sku="HIPSTER-WORKBENCH")
         line = model.OrderLine("o1", "HIPSTER-WORKBENCH", 10)
@@ -93,8 +93,8 @@ def test_concurrent_updates_to_version_are_not_allowed(postgres_session_factory)
     insert_batch(session, batch, sku, 100, eta=None, product_version=1)
     session.commit()
 
-    order1, order2 = random_order_id(1), random_order_id(2)
-    exceptions = []  # type: List[Exception]
+    order1, order2 = random_orderid(1), random_orderid(2)
+    exceptions = []
     try_to_allocate_order1 = lambda: try_to_allocate(order1, sku, exceptions)
     try_to_allocate_order2 = lambda: try_to_allocate(order2, sku, exceptions)
     thread1 = threading.Thread(target=try_to_allocate_order1)
@@ -113,7 +113,7 @@ def test_concurrent_updates_to_version_are_not_allowed(postgres_session_factory)
     assert "could not serialize access due to concurrent update" in str(exception)
 
     orders = session.execute(
-        "SELECT order_id FROM allocations"
+        "SELECT orderid FROM allocations"
         " JOIN batches ON allocations.batch_id = batches.id"
         " JOIN order_lines ON allocations.orderline_id = order_lines.id"
         " WHERE order_lines.sku=:sku",

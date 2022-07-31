@@ -2,6 +2,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 from typing import Optional, List, Set
+from . import events
+from allocation.adapters import email
 
 
 class OutOfStock(Exception):
@@ -13,6 +15,7 @@ class Product:
         self.sku = sku
         self.batches = batches
         self.version_number = version_number
+        self.events = []
 
     def allocate(self, line: OrderLine) -> str:
         try:
@@ -21,7 +24,8 @@ class Product:
             self.version_number += 1
             return batch.reference
         except StopIteration:
-            raise OutOfStock(f"Out of stock for sku {line.sku}")
+            self.events.append(events.OutOfStock(line.sku))
+            return None
 
 
 @dataclass(unsafe_hash=True)
@@ -31,13 +35,31 @@ class OrderLine:
     qty: int
 
 
+def allocate(line: OrderLine, batches: List[Batch]) -> str:
+    try:
+        batch = next(b for b in sorted(batches) if b.can_allocate(line))
+        batch.allocate(line)
+        return batch.reference
+    except StopIteration:
+        email.send_mail("stock@made.com", f"Out of stock for sku {line.sku}")
+        raise OutOfStock(f"Out of stock for sku {line.sku}")
+
+
+def deallocate(line: OrderLine, batch: Batch) -> str:
+    try:
+        batch.deallocate(line)
+        return True
+    except Exception as e:
+        return False
+
+
 class Batch:
     def __init__(self, ref: str, sku: str, qty: int, eta: Optional[date]):
         self.reference = ref
         self.sku = sku
         self.eta = eta
         self._purchased_quantity = qty
-        self._allocations = set()  # type: Set[OrderLine]
+        self._allocations = set()
 
     def __repr__(self):
         return f"<Batch {self.reference}>"

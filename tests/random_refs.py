@@ -13,5 +13,5 @@ def random_batchref(name=""):
     return f"batch-{name}-{random_suffix()}"
 
 
-def random_order_id(name=""):
+def random_orderid(name=""):
     return f"order-{name}-{random_suffix()}"

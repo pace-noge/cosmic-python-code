@@ -4,7 +4,9 @@ from typing import Optional
 from allocation.service_layer import unit_of_work
 from allocation.domain import model
 from allocation.adapters.repository import AbstractRepository
+from allocation.adapters import email
 from allocation.domain.model import OrderLine
+from . import message_bus
 
 
 class InvalidSku(Exception):
@@ -26,7 +28,7 @@ def allocate(
             raise InvalidSku(f"Invalid sku {line.sku}")
         batch_ref = product.allocate(line)
         uow.commit()
-    return batch_ref
+        return batch_ref
 
 
 def reallocate(
