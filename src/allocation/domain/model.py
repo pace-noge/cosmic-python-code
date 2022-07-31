@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Optional, List, Set
 from . import events
+from allocation.adapters import email
+
 
 class OutOfStock(Exception):
     pass
@@ -39,6 +41,7 @@ def allocate(line: OrderLine, batches: List[Batch]) -> str:
         batch.allocate(line)
         return batch.reference
     except StopIteration:
+        email.send_mail("stock@made.com", f"Out of stock for sku {line.sku}")
         raise OutOfStock(f"Out of stock for sku {line.sku}")
 
 

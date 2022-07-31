@@ -36,6 +36,7 @@ class AbstractUnitOfWork(abc.ABC):
     def rollback(self):
         raise NotImplementedError
 
+
 DEFAULT_SESSION_FACTORY = sessionmaker(
     bind=create_engine(
         config.get_postgres_uri()
@@ -49,7 +50,9 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
 
     def __enter__(self):
         self.session = self.session_factory()
-        self.products = repository.SqlAlchemyRepository(self.session)
+        self.products = repository.TrackingRepository(
+            repository.SqlAlchemyRepository(self.session)
+        )
         return super().__enter__()
 
     def __exit__(self, *args):

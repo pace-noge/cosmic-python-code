@@ -6,8 +6,7 @@ from sqlalchemy.orm import sessionmaker
 
 from allocation import config
 from allocation.domain import model
-from allocation.adapters import repository
-from allocation.adapters import orm
+from allocation.adapters import repository, orm, email
 from allocation.service_layer import services, unit_of_work
 
 orm.start_mappers()
@@ -21,15 +20,20 @@ def is_valid_sku(sku, batches):
 
 @app.route("/allocate", methods=["POST"])
 def allocate_endpoint():
-    session = get_session()
-    repo = repository.SqlAlchemyRepository(session)
+    line = model.OrderLine(
+        request.json["order_id"],
+        request.json["sku"],
+        request.json["qty"],
+    )
     try:
-        batch_ref = services.allocate(
-            request.json["order_id"], request.json["sku"],
-            request.json["qty"],
-            unit_of_work.SqlAlchemyUnitOfWork()
-        )
+        uow = unit_of_work.SqlAlchemyUnitOfWork()
+        batch_ref = services.allocate(line, uow)
     except (model.OutOfStock, services.InvalidSku) as e:
+        email.send_mail(
+            "out of stock",
+            "stock_admin@made.com",
+            f"{line.order_id} - {line.sku}"
+        )
         return {"message": str(e)}, 400
     return {"batch_ref": batch_ref}, 201
 

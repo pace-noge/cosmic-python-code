@@ -33,12 +33,12 @@ def get_allocated_batch_ref(session, orderid, sku):
     return batchref
 
 
-def test_uow_can_retrieve_a_batch_and_allocate_to_it(session_factory):
-    session = session_factory()
+def test_uow_can_retrieve_a_batch_and_allocate_to_it(sqlite_session_factory):
+    session = sqlite_session_factory()
     insert_batch(session, "batch1", "HIPSTER-WORKBENCH", 100, None)
     session.commit()
 
-    uow = unit_of_work.SqlAlchemyUnitOfWork(session_factory)
+    uow = unit_of_work.SqlAlchemyUnitOfWork(sqlite_session_factory)
     with uow:
         product = uow.products.get(sku="HIPSTER-WORKBENCH")
         line = model.OrderLine("o1", "HIPSTER-WORKBENCH", 10)
@@ -94,7 +94,7 @@ def test_concurrent_updates_to_version_are_not_allowed(postgres_session_factory)
     session.commit()
 
     order1, order2 = random_orderid(1), random_orderid(2)
-    exceptions = [] 
+    exceptions = []
     try_to_allocate_order1 = lambda: try_to_allocate(order1, sku, exceptions)
     try_to_allocate_order2 = lambda: try_to_allocate(order2, sku, exceptions)
     thread1 = threading.Thread(target=try_to_allocate_order1)

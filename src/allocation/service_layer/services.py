@@ -4,6 +4,7 @@ from typing import Optional
 from allocation.service_layer import unit_of_work
 from allocation.domain import model
 from allocation.adapters.repository import AbstractRepository
+from allocation.adapters import email
 from allocation.domain.model import OrderLine
 from . import message_bus
 
