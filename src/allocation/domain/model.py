@@ -27,6 +27,15 @@ class Product:
             self.events.append(events.OutOfStock(line.sku))
             return None
 
+    def change_batch_quantity(self, ref: str, qty: int):
+        batch = next(b for b in self.batches if b.reference == ref)
+        batch._purchased_quantity = qty
+        while batch.available_quantity < 0:
+            line = batch.deallocate_one()
+            self.events.append(
+                events.AllocationRequired(line.order_id, line.sku, line.qty)
+            )
+
 
 @dataclass(unsafe_hash=True)
 class OrderLine:
@@ -41,7 +50,7 @@ def allocate(line: OrderLine, batches: List[Batch]) -> str:
         batch.allocate(line)
         return batch.reference
     except StopIteration:
-        email.send_mail("stock@made.com", f"Out of stock for sku {line.sku}")
+        email.send("stock@made.com", f"Out of stock for sku {line.sku}")
         raise OutOfStock(f"Out of stock for sku {line.sku}")
 
 
@@ -86,6 +95,9 @@ class Batch:
     def deallocate(self, line: OrderLine):
         if line in self._allocations:
             self._allocations.remove(line)
+
+    def deallocate_one(self) -> OrderLine:
+        return self._allocations.pop()
 
     @property
     def allocated_quantity(self) -> int:
