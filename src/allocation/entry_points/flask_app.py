@@ -40,8 +40,6 @@ def allocate_endpoint():
 
 @app.route("/add_batch", methods=["POST"])
 def add_batch():
-    session = get_session()
-    repo = repository.SqlAlchemyRepository(session)
     eta = request.json["eta"]
     if eta is not None:
         eta = datetime.fromisoformat(eta).date()
