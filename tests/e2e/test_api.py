@@ -4,7 +4,7 @@ import pytest
 import requests
 
 from allocation import config
-from ..random_refs import random_sku, random_order_id, random_batchref
+from ..random_refs import random_sku, random_orderid, random_batchref
 
 
 def post_to_add_batch(ref, sku, qty, eta):
@@ -30,7 +30,7 @@ def test_happy_path_returns_201_and_allocated_batch(add_stock):
         ]
     )
 
-    data = {"order_id": random_order_id(), "sku": sku, "qty": 3}
+    data = {"order_id": random_orderid(), "sku": sku, "qty": 3}
     url = config.get_api_url()
 
     r = requests.post(f"{url}/allocate", json=data)
@@ -41,7 +41,7 @@ def test_happy_path_returns_201_and_allocated_batch(add_stock):
 
 @pytest.mark.usefixtures("restart_api")
 def test_unhappy_path_returns_400_and_error_message():
-    unknown_sku, orderid = random_sku(), random_order_id()
+    unknown_sku, orderid = random_sku(), random_orderid()
     data = {"order_id": orderid, "sku": unknown_sku, "qty": 20}
     url = config.get_api_url()
     r = requests.post(f"{url}/allocate", json=data)

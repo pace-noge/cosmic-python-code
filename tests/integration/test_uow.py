@@ -33,12 +33,12 @@ def get_allocated_batch_ref(session, orderid, sku):
     return batchref
 
 
-def test_uow_can_retrieve_a_batch_and_allocate_to_it(sqlite_session_factory):
-    session = sqlite_session_factory()
+def test_uow_can_retrieve_a_batch_and_allocate_to_it(session_factory):
+    session = session_factory()
     insert_batch(session, "batch1", "HIPSTER-WORKBENCH", 100, None)
     session.commit()
 
-    uow = unit_of_work.SqlAlchemyUnitOfWork(sqlite_session_factory)
+    uow = unit_of_work.SqlAlchemyUnitOfWork(session_factory)
     with uow:
         product = uow.products.get(sku="HIPSTER-WORKBENCH")
         line = model.OrderLine("o1", "HIPSTER-WORKBENCH", 10)
@@ -113,7 +113,7 @@ def test_concurrent_updates_to_version_are_not_allowed(postgres_session_factory)
     assert "could not serialize access due to concurrent update" in str(exception)
 
     orders = session.execute(
-        "SELECT orderid FROM allocations"
+        "SELECT order_id FROM allocations"
         " JOIN batches ON allocations.batch_id = batches.id"
         " JOIN order_lines ON allocations.orderline_id = order_lines.id"
         " WHERE order_lines.sku=:sku",
